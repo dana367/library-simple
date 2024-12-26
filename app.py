@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
-from quart import Quart, g
+from quart import Quart, g, render_template
 from quart_db import QuartDB
 from quart_schema import QuartSchema, validate_request, validate_response
 
@@ -350,3 +350,53 @@ async def return_book(loan_id: int, data: ReturnBookInput):
 
     # Return the loan details that were just deleted
     return Loan(**existing_loan)
+
+
+@app.get("/")
+async def home():
+    # Get counts
+    book_count = await g.connection.fetch_val("SELECT COUNT(*) FROM books")
+    reader_count = await g.connection.fetch_val("SELECT COUNT(*) FROM readers")
+    active_loans_count = await g.connection.fetch_val(
+        "SELECT COUNT(*) FROM loans WHERE returned = FALSE"
+    )
+
+    # Get recent loans
+    recent_loans_query = """
+        SELECT 
+            b.title as book_title,
+            r.name as reader_name,
+            strftime('%d-%m-%Y', l.due_date) as due_date
+        FROM loans l
+        JOIN books b ON l.book_id = b.id
+        JOIN readers r ON l.reader_id = r.id
+        WHERE l.returned = FALSE
+        ORDER BY l.loan_date DESC
+        LIMIT 5
+    """
+    recent_loans = [dict(row) async for row in g.connection.iterate(recent_loans_query)]
+
+    # Get popular books
+    popular_books_query = """
+        SELECT 
+            b.title,
+            b.author,
+            COUNT(*) as borrow_count
+        FROM loans l
+        JOIN books b ON l.book_id = b.id
+        GROUP BY b.id
+        ORDER BY borrow_count DESC
+        LIMIT 5
+    """
+    popular_books = [
+        dict(row) async for row in g.connection.iterate(popular_books_query)
+    ]
+
+    return await render_template(
+        "home.html",
+        book_count=book_count,
+        reader_count=reader_count,
+        active_loans_count=active_loans_count,
+        recent_loans=recent_loans,
+        popular_books=popular_books,
+    )

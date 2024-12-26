@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome - Library Management System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12 text-center">
+        <h1 class="display-4">Welcome to the Library</h1>
+        <p class="lead">Manage books, readers, and loans efficiently</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title">Books</h5>
+                <p class="card-text">Total Books: {{ book_count }}</p>
+                <a href="/books" class="btn btn-primary">Manage Books</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title">Readers</h5>
+                <p class="card-text">Registered Readers: {{ reader_count }}</p>
+                <a href="/readers" class="btn btn-primary">Manage Readers</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title">Active Loans</h5>
+                <p class="card-text">Current Loans: {{ active_loans_count }}</p>
+                <a href="/loans" class="btn btn-primary">View Loans</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                Recent Loans
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for loan in recent_loans %}
+                    <div class="list-group-item">
+                        <h6 class="mb-1">{{ loan.book_title }}</h6>
+                        <p class="mb-1">Borrowed by: {{ loan.reader_name }}</p>
+                        <small>Due date: {{ loan.due_date }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                Popular Books
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for book in popular_books %}
+                    <div class="list-group-item">
+                        <h6 class="mb-1">{{ book.title }}</h6>
+                        <p class="mb-1">By {{ book.author }}</p>
+                        <small>Times borrowed: {{ book.borrow_count }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
