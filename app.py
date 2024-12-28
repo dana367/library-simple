@@ -118,12 +118,12 @@ async def create_reader(data: ReaderInput):
 
 
 @app.get("/readers/")
-@validate_response(Readers)
-async def get_readers() -> Reader:
+async def get_readers():
     query = """SELECT id, name
                 FROM readers"""
     readers = [Reader(**row) async for row in g.connection.iterate(query)]
-    return Readers(readers=readers)
+    readers_data = [{"id": reader.id, "name": reader.name} for reader in readers]
+    return await render_template("readers.html", readers=readers_data)
 
 
 @app.get("/readers/<int:id>/")
