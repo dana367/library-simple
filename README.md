@@ -1,3 +1,9 @@
+![image](https://github.com/user-attachments/assets/4c21ddd8-35cc-4b69-8f9c-771168701eaf)
+![image](https://github.com/user-attachments/assets/3a8816d5-66b3-49e0-9ddd-6a4123eee5f6)
+![image](https://github.com/user-attachments/assets/6b9474b3-0121-4602-a9e4-3ba26f3f4dcb)
+![image](https://github.com/user-attachments/assets/0b30d5bc-a78e-4beb-bf4d-15dc924079cf)
+
+
 # Simple Library Management System
 
 This project is a web-based library management system built with Quart, providing APIs for managing books, readers, and loans.
