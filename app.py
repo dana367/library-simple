@@ -239,8 +239,20 @@ async def get_loans_page():
     """
     loans = [dict(row) async for row in g.connection.iterate(query)]
     today = date.today().isoformat()
-
-    return await render_template("active_loans.html", loans=loans, today=today)
+    loans_data = [
+        {
+            "id": loan["id"],
+            "book_id": loan["book_id"],
+            "reader_id": loan["reader_id"],
+            "loan_date": loan["loan_date"],
+            "due_date": loan["due_date"],
+            "returned": loan["returned"],
+            "book_title": loan["book_title"],
+            "reader_name": loan["reader_name"],
+        }
+        for loan in loans
+    ]
+    return await render_template("active_loans.html", loans=loans_data, today=today)
 
 
 @app.get("/api/loans/")
