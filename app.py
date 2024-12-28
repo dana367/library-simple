@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 
 from quart import Quart, g, render_template
@@ -223,8 +223,30 @@ async def create_loan(data: LoanInput):
 
 
 @app.get("/loans/")
+async def get_loans_page():
+    """Get loans page (HTML)"""
+    query = """
+        SELECT l.id, l.book_id, l.reader_id,
+               strftime('%Y-%m-%d', l.loan_date) as loan_date,
+               strftime('%Y-%m-%d', l.due_date) as due_date,
+               l.returned,
+               b.title as book_title,
+               r.name as reader_name
+        FROM loans l
+        JOIN books b ON l.book_id = b.id
+        JOIN readers r ON l.reader_id = r.id
+        ORDER BY l.loan_date DESC
+    """
+    loans = [dict(row) async for row in g.connection.iterate(query)]
+    today = date.today().isoformat()
+
+    return await render_template("active_loans.html", loans=loans, today=today)
+
+
+@app.get("/api/loans/")
 @validate_response(Loans)
-async def get_loans() -> Loans:
+async def get_loans_api() -> Loans:
+    """Get loans (JSON API)"""
     query = """SELECT id, book_id, reader_id, 
                 strftime('%Y-%m-%d', loan_date) as loan_date, 
                 strftime('%Y-%m-%d', due_date) as due_date, 

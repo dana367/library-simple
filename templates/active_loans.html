@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Active Loans - Library Management System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>Active Loans</h2>
+    </div>
+    <div class="col-md-4 text-end">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addLoanModal">
+            <i class="bi bi-plus"></i> New Loan
+        </button>
+    </div>
+</div>
+
+<!-- Loans Table -->
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Book</th>
+                <th>Reader</th>
+                <th>Loan Date</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for loan in loans %}
+            <tr class="{% if not loan.returned and loan.due_date < today %}table-danger{% endif %}">
+                <td>{{ loan.id }}</td>
+                <td>{{ loan.book_title }}</td>
+                <td>{{ loan.reader_name }}</td>
+                <td>{{ loan.loan_date }}</td>
+                <td>{{ loan.due_date }}</td>
+                <td>
+                    {% if loan.returned %}
+                        <span class="badge bg-success">Returned</span>
+                    {% else %}
+                        <span class="badge bg-primary">Active</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if not loan.returned %}
+                    <button type="button" class="btn btn-sm btn-success" 
+                            onclick="updateLoanStatus({{ loan.id }}, true)">
+                        <i class="bi bi-check-circle"></i> Return
+                    </button>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Add Loan Modal -->
+<div class="modal fade" id="addLoanModal" tabindex="-1" aria-labelledby="addLoanModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addLoanModalLabel">New Loan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addLoanForm" onsubmit="event.preventDefault();">
+                    <div class="mb-3">
+                        <label for="book_id" class="form-label">Book ID</label>
+                        <input type="number" class="form-control" id="book_id" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reader_id" class="form-label">Reader ID</label>
+                        <input type="number" class="form-control" id="reader_id" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="loan_date" class="form-label">Loan Date</label>
+                        <input type="date" class="form-control" id="loan_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="due_date" class="form-label">Due Date</label>
+                        <input type="date" class="form-control" id="due_date" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="submitLoanBtn">Create Loan</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default dates
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('loan_date').value = today;
+    document.getElementById('loan_date').max = today;
+    
+    // Set due date minimum to today
+    document.getElementById('due_date').min = today;
+    
+    // Add Loan
+    const submitLoanBtn = document.getElementById('submitLoanBtn');
+    submitLoanBtn.addEventListener('click', submitLoan);
+});
+
+async function submitLoan() {
+    const form = document.getElementById('addLoanForm');
+    const book_id = parseInt(form.querySelector('#book_id').value);
+    const reader_id = parseInt(form.querySelector('#reader_id').value);
+    const loan_date = form.querySelector('#loan_date').value;
+    const due_date = form.querySelector('#due_date').value;
+
+    if (!book_id || !reader_id || !loan_date || !due_date) {
+        alert('Please fill in all fields');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/loans/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                book_id,
+                reader_id,
+                loan_date,
+                due_date,
+                returned: false
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to create loan');
+        }
+
+        const loan = await response.json();
+        form.reset();
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addLoanModal'));
+        modal.hide();
+        location.reload();
+
+    } catch (error) {
+        console.error('Error:', error);
+        alert(error.message);
+    }
+}
+
+async function updateLoanStatus(loanId, returned) {
+    if (!confirm('Are you sure you want to mark this loan as returned?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/loans/${loanId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ returned })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to update loan status');
+        }
+
+        location.reload();
+
+    } catch (error) {
+        console.error('Error:', error);
+        alert(error.message);
+    }
+}
+</script>
+{% endblock %}
