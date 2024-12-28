@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+
+{% block title %}Books - Library Management System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>Library Books</h2>
+    </div>
+    <div class="col-md-4 text-end">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBookModal">
+            <i class="bi bi-plus"></i> Add New Book
+        </button>
+    </div>
+</div>
+
+<!-- Search Bar -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="input-group">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search books...">
+            <button class="btn btn-outline-secondary" type="button">Search</button>
+        </div>
+    </div>
+</div>
+
+<!-- Books List -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Title</th>
+                        <th>Author</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for book in books %}
+                    <tr>
+                        <td>{{ book.id }}</td>
+                        <td>{{ book.title }}</td>
+                        <td>{{ book.author }}</td>
+                        <td>
+                            {% if book.is_borrowed %}
+                            <span class="badge bg-warning">Borrowed</span>
+                            {% else %}
+                            <span class="badge bg-success">Available</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" 
+                                    data-bs-target="#editBookModal" 
+                                    data-book-id="{{ book.id }}"
+                                    data-book-title="{{ book.title }}"
+                                    data-book-author="{{ book.author }}">
+                                Edit
+                            </button>
+                            {% if not book.is_borrowed %}
+                            <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" 
+                                    data-bs-target="#loanBookModal" 
+                                    data-book-id="{{ book.id }}">
+                                Loan
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Book Modal -->
+<div class="modal fade" id="addBookModal" tabindex="-1" aria-labelledby="addBookModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addBookModalLabel">Add New Book</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Remove method and action from form -->
+                <form id="addBookForm" onsubmit="event.preventDefault();">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="author" class="form-label">Author</label>
+                        <input type="text" class="form-control" id="author" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <!-- Change to type="button" to prevent form submission -->
+                <button type="button" class="btn btn-primary" id="submitBookBtn">Add Book</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Edit Book Modal -->
+<div class="modal fade" id="editBookModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Book</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editBookForm" method="POST">
+                    <input type="hidden" id="editBookId" name="id">
+                    <div class="mb-3">
+                        <label for="editTitle" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="editTitle" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editAuthor" class="form-label">Author</label>
+                        <input type="text" class="form-control" id="editAuthor" name="author" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" form="editBookForm" class="btn btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loan Book Modal -->
+<div class="modal fade" id="loanBookModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Loan Book</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="loanBookForm" method="POST" action="/loans/">
+                    <input type="hidden" id="loanBookId" name="book_id">
+                    <div class="mb-3">
+                        <label for="readerId" class="form-label">Reader</label>
+                        <select class="form-select" id="readerId" name="reader_id" required>
+                            {% for reader in readers %}
+                            <option value="{{ reader.id }}">{{ reader.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="loanDate" class="form-label">Loan Date</label>
+                        <input type="date" class="form-control" id="loanDate" name="loan_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="dueDate" class="form-label">Due Date</label>
+                        <input type="date" class="form-control" id="dueDate" name="due_date" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" form="loanBookForm" class="btn btn-primary">Create Loan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add event listener to the submit button
+        const submitBtn = document.getElementById('submitBookBtn');
+        submitBtn.addEventListener('click', submitBook);
+
+        // Prevent form from submitting normally
+        const form = document.getElementById('addBookForm');
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+        });
+    });
+
+    async function submitBook(e) {
+        e.preventDefault(); // Prevent any default button behavior
+        
+        const form = document.getElementById('addBookForm');
+        const title = form.querySelector('#title').value.trim();
+        const author = form.querySelector('#author').value.trim();
+
+        
+        // Validate input
+        if (!title || !author) {
+            alert('Please fill in both title and author');
+            return;
+        }
+
+        // Add loading state
+        const submitButton = document.getElementById('submitBookBtn');
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Adding...';
+
+        try {
+            // Log request details
+            console.log('Making fetch request to /books/');
+            console.log('Headers:', {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            });
+            console.log('Body:', JSON.stringify({ title, author }));
+
+            const response = await fetch('/books/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    title: title,
+                    author: author
+                })
+            });
+
+            // Log response
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Failed to add book');
+            }
+
+            const book = await response.json();
+            console.log('Response data:', book);
+
+            // Clear form and close modal
+            form.reset();
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addBookModal'));
+            modal.hide();
+
+            // Show success message
+            alert('Book added successfully!');
+            location.reload();
+
+        } catch (error) {
+            console.error('Error:', error);
+            alert(error.message);
+        } finally {
+            // Reset button state
+            submitButton.disabled = false;
+            submitButton.innerHTML = 'Add Book';
+        }
+    }
+
+    // Clear form when modal is closed
+    document.getElementById('addBookModal').addEventListener('hidden.bs.modal', function () {
+        document.getElementById('addBookForm').reset();
+    });
+</script>
+{% endblock %}
+

@@ -42,7 +42,7 @@ class Books:
     books: list[Book]
 
 
-@app.get("/books/")
+@app.get("/books1/")
 @validate_response(Books)
 async def get_books() -> Books:
     query = """SELECT id, title, author 
@@ -400,3 +400,29 @@ async def home():
         recent_loans=recent_loans,
         popular_books=popular_books,
     )
+
+
+@app.get("/books/")
+async def books_page():
+    # Get all books with their loan status
+    query = """
+        SELECT 
+            b.id,
+            b.title,
+            b.author,
+            EXISTS (
+                SELECT 1 
+                FROM loans l 
+                WHERE l.book_id = b.id 
+                AND l.returned = FALSE
+            ) as is_borrowed
+        FROM books b
+        ORDER BY b.title
+    """
+    books = [dict(row) async for row in g.connection.iterate(query)]
+
+    # Get all readers for the loan form
+    readers_query = "SELECT id, name FROM readers ORDER BY name"
+    readers = [dict(row) async for row in g.connection.iterate(readers_query)]
+
+    return await render_template("display_books.html", books=books, readers=readers)
